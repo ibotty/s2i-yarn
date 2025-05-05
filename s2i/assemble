@@ -1,0 +1,69 @@
+#!/bin/bash
+[ -d "/usr/src/app" ] && exit 0
+
+set -euo pipefail
+
+safeLogging () {
+    if [[ $1 =~ http[s]?://.*@.*$ ]]; then
+        echo $1 | sed 's/^.*@/redacted@/'
+    else
+        echo $1
+    fi
+}
+
+shopt -s dotglob
+if [ -d /tmp/artifacts ] && [ "$(ls /tmp/artifacts/ 2>/dev/null)" ]; then
+    echo "---> Restoring previous build artifacts ..."
+    mv -T --verbose /tmp/artifacts/node_modules "${HOME}/node_modules"
+fi
+
+echo "---> Installing application source ..."
+mv /tmp/src/* ./
+
+# Fix source directory permissions
+fix-permissions ./
+
+if [ ! -z $HTTP_PROXY ]; then
+    echo "---> Setting npm http proxy to" $(safeLogging $HTTP_PROXY)
+	npm config set proxy $HTTP_PROXY
+fi
+
+if [ ! -z $http_proxy ]; then
+    echo "---> Setting npm http proxy to" $(safeLogging $http_proxy)
+	npm config set proxy $http_proxy
+fi
+
+if [ ! -z $HTTPS_PROXY ]; then
+    echo "---> Setting npm https proxy to" $(safeLogging $HTTPS_PROXY)
+	npm config set https-proxy $HTTPS_PROXY
+fi
+
+if [ ! -z $https_proxy ]; then
+    echo "---> Setting npm https proxy to" $(safeLogging $https_proxy)
+	npm config set https-proxy $https_proxy
+fi
+
+# Change the npm registry mirror if provided
+if [[ -v NPM_MIRROR ]]; then
+	npm config set registry $NPM_MIRROR
+fi
+
+echo "---> Installing all dependencies"
+yarn install
+
+if [[ -v YARN_WORKSPACE ]]; then
+    yarn_workspace() {
+        yarn workspace "$YARN_WORKSPACE" "$@"
+    }
+else
+    yarn_workspace() {
+        yarn "$@"
+    }
+fi
+
+#do not fail when there is no build script
+echo "---> Building in production mode"
+yarn_workspace ${YARN_BUILD:-build}
+
+# Fix source directory permissions
+fix-permissions ./

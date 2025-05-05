@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ -e "/opt/app-root/etc/generate_container_user" ]; then
+  source /opt/app-root/etc/generate_container_user
+fi
+
+if [[ -v YARN_WORKSPACE ]]; then
+    yarn_workspace() {
+        yarn workspace "$YARN_WORKSPACE" "$@"
+    }
+else
+    yarn_workspace() {
+        yarn "$@"
+    }
+fi
+
+exec yarn_workspace ${YARN_RUN:-start}
