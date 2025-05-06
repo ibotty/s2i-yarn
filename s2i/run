@@ -16,4 +16,4 @@ else
     }
 fi
 
-exec yarn_workspace ${YARN_RUN:-start}
+yarn_workspace ${YARN_RUN:-start}
