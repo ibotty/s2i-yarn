@@ -22,7 +22,8 @@ LABEL io.k8s.description="$DESCRIPTION" \
 USER 1001
 WORKDIR /opt/app-root/src
 
-RUN npm install -g corepack
+RUN npm install -g corepack \
+ && yarn --version
 
 COPY ./s2i/ $STI_SCRIPTS_PATH
 
